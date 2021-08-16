@@ -357,6 +357,8 @@ class GA:
                 self.crossover = self.two_points_crossover
             elif (crossover_type == "uniform"):
                 self.crossover = self.uniform_crossover
+            elif (crossover_type == "uniform_pair"):
+                self.crossover = self.uniform_crossover_pair
             elif (crossover_type == "scattered"):
                 self.crossover = self.scattered_crossover
             else:
@@ -1629,6 +1631,53 @@ class GA:
                 elif (genes_source[gene_idx] == 1):
                     # The gene will be copied from the second parent if the current gene index is 1.
                     offspring[k, gene_idx] = parents[parent2_idx, gene_idx]
+        return offspring
+
+    def uniform_crossover_pair(self, parents, offspring_size):
+
+        """
+        Applies the uniform crossover. For each gene, a parent out of the 2 mating parents is selected randomly and the gene is copied from it.
+        It accepts 2 parameters:
+            -parents: The parents to mate for producing the offspring.
+            -offspring_size: The size of the offspring to produce.
+        It returns an array the produced offspring.
+        """
+
+        if self.gene_type_single == True:
+            offspring = numpy.empty(offspring_size, dtype=self.gene_type[0])
+        else:
+            offspring = numpy.empty(offspring_size, dtype=object)
+
+        for k in range(offspring_size[0]):
+            if not (self.crossover_probability is None):
+                probs = numpy.random.random(size=parents.shape[0])
+                indices = numpy.where(probs <= self.crossover_probability)[0]
+
+                # If no parent satisfied the probability, no crossover is applied and a parent is selected.
+                if len(indices) == 0:
+                    offspring[k, :] = parents[k % parents.shape[0], :]
+                    continue
+                elif len(indices) == 1:
+                    parent1_idx = indices[0]
+                    parent2_idx = parent1_idx
+                else:
+                    indices = random.sample(set(indices), 2)
+                    parent1_idx = indices[0]
+                    parent2_idx = indices[1]
+            else:
+                # Index of the first parent to mate.
+                parent1_idx = k % parents.shape[0]
+                # Index of the second parent to mate.
+                parent2_idx = (k+1) % parents.shape[0]
+
+            genes_source = numpy.random.randint(low=0, high=2, size=offspring_size[1])
+            for gene_idx in range(int(offspring_size[1]/2)):
+                if (genes_source[2*gene_idx] == 0):
+                    offspring[k, 2*gene_idx] = parents[parent1_idx, 2*gene_idx]
+                    offspring[k, 2*gene_idx+1] = parents[parent1_idx, 2*gene_idx+1]
+                elif (genes_source[2*gene_idx] == 1):
+                    offspring[k, 2*gene_idx] = parents[parent2_idx, 2*gene_idx]
+                    offspring[k, 2*gene_idx+1] = parents[parent2_idx, 2*gene_idx+1]
         return offspring
 
     def scattered_crossover(self, parents, offspring_size):
